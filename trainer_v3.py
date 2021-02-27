@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torchaudio
 import numpy as np
 import warnings
+import librosa
 warnings.filterwarnings("ignore")
 
 from glob import glob
@@ -25,7 +26,7 @@ print(file+' load finish')
 IDs = list(data.keys())
 
 def sf_windows(input_,rate=22050,window_size=6,shift_size=1):
-
+    input_ = torch.Tensor(input_)
     pad_len = (window_size/2)*rate
     pad = ConstantPad1d(int(pad_len),0)
     waveform = pad(input_)
@@ -110,6 +111,7 @@ while er <=50 :
         for ID in IDs[c:c+h]:
 
             x = sf_windows(data[ID]['x'])
+            x = torch.Tensor(librosa.power_to_db(x, ref=np.max))
             y = data[IDs[0]]['y']
 
             if x.shape[0] > y.shape[0]:
@@ -129,19 +131,17 @@ while er <=50 :
             X_train, X_test = xs[train_index], xs[test_index]
             y_train, y_test = ys[train_index], ys[test_index]
 
-            dataloader_X_train = DataLoader(X_train,batch_size=64*3,shuffle=False, num_workers=0,drop_last=True)
-            dataloader_y_train= DataLoader(y_train,batch_size=64*3,shuffle=False, num_workers=0,drop_last=True)
+            dataloader_X_train = DataLoader(X_train,batch_size=64*2,shuffle=False, num_workers=0,drop_last=True)
+            dataloader_y_train= DataLoader(y_train,batch_size=64*2,shuffle=False, num_workers=0,drop_last=True)
 
-            dataloader_X_test = DataLoader(X_test,batch_size=64*3,shuffle=False, num_workers=0,drop_last=True)
-            dataloader_y_test= DataLoader(y_test,batch_size=64*3,shuffle=False, num_workers=0,drop_last=True)
+            dataloader_X_test = DataLoader(X_test,batch_size=64*2,shuffle=False, num_workers=0,drop_last=True)
+            dataloader_y_test= DataLoader(y_test,batch_size=64*2,shuffle=False, num_workers=0,drop_last=True)
         
         for batch_num,(x,y) in enumerate(zip(dataloader_X_train,dataloader_y_train)):
             model.train()
             output = model(x.to(device))
             loss = loss_fn(output, y.to(device))
-            print(float(loss))
             if torch.flatten(torch.isnan(loss)).any():
-                print('is NAN @@@@@')
                 continue
             optimizer.zero_grad()
             loss.float().backward()

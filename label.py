@@ -39,9 +39,9 @@ if __name__ == '__main__':
         os.mkdir('label')
         
         
-    names_ = [file.split('/')[1][:-4]+'.mp3' for file in sorted(glob('label/*'))]
+    names_ = [file.split('/')[1][:-4]+'.mp3' for file in sorted(glob('audio_rename/*'))]
     names= [c for c in names_ if not os.path.isfile('label/'+c[:-4]+'.txt')]
     print('have {} data {} need proccess'.format(len(names_),len(names)))
     
-    with Pool(20) as pool:  
+    with Pool(5) as pool:  
         result = pool.map(BD,names)
